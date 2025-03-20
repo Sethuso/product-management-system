@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-// ProductController
+
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/com/api/products")
 public class ProductController {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
@@ -44,13 +44,13 @@ public class ProductController {
         logger.info("Request to retrieve all products");
         return productService.getAllProducts();
     }
-
-    @GetMapping("/category/getProducts")
+    @GetMapping("/get_products_by_category")
     public ApiResponse findAvailableProductsByCategory(
             @RequestParam String categoryName,
-            @RequestParam(defaultValue = "name") String sortBy) {
+            @RequestParam(defaultValue = "low") String priceRange) {
         categoryName = categoryName.trim();
         logger.info("Request to find available products by category: {}", categoryName);
-        return productService.findAvailableProductsByCategory(categoryName, sortBy);
+        return productService.findAvailableProductsByCategory(categoryName, priceRange);
     }
+
 }

@@ -14,7 +14,7 @@ import java.util.Map;
 public class ApiResponse {
     private boolean success;
     private String message;
-    private Object data; // Can hold either the response data or validation errors
+    private Object data;
     private String traceId;
     private int httpStatus;
 

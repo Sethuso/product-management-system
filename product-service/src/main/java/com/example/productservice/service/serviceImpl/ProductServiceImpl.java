@@ -64,8 +64,6 @@ public class ProductServiceImpl implements ProductService {
             product.setCategory(category);
             product.setQuantity(0);
             product.setPrice(0.0);
-            product.setCreatedAt(LocalDateTime.now());
-
             Product savedProduct = productRepository.save(product);
             ProductDto response = modelMapper.map(savedProduct, ProductDto.class);
 
@@ -204,43 +202,40 @@ public class ProductServiceImpl implements ProductService {
             log.error("[{}] Error while fetching inventory for Product ID: {}. Error: {}", traceId, productId, e.getMessage());
         }
     }
-
     @Override
     public ApiResponse findAvailableProductsByCategory(String categoryName, String sortBy) {
         String traceId = UUID.randomUUID().toString();
         try {
             log.info("[{}] Fetching available products for category: '{}'", traceId, categoryName);
 
-            // Trim and validate the category name
             if (categoryName == null || categoryName.trim().isEmpty()) {
                 log.error("[{}] Category name is null or empty.", traceId);
                 return ApiResponse.failure("Category name must not be null or empty.", traceId, HttpStatus.BAD_REQUEST);
             }
             categoryName = categoryName.trim();
 
-            // Check if the category exists
             Optional<Category> categoryOpt = categoryRepository.findByName(categoryName);
             if (categoryOpt.isEmpty()) {
-                log.error("[{}] Category '{}' not found.", traceId, categoryName);
-                return ApiResponse.failure("Category '" + categoryName + "' not found.", traceId, HttpStatus.NOT_FOUND);
+                log.error("[{}] Category '{}' doesn't exists.", traceId, categoryName);
+                return ApiResponse.failure("Category '" + categoryName + "' doesn't exists.", traceId, HttpStatus.NOT_FOUND);
             }
 
-            // Fetch products based on category
+            if (!sortBy.equalsIgnoreCase("low") && !sortBy.equalsIgnoreCase("high")) {
+                sortBy = "low";
+            }
+
             List<Product> products = productRepository.findAvailableProductsByCategoryName(categoryName, sortBy);
 
-            // Update each product with price and inventory details
             for (Product product : products) {
                 fetchPriceFromPricingService(product, product.getId(), traceId);
                 fetchInventoryFromInventoryService(product, product.getId(), traceId);
             }
 
-            // Filter out products with unavailable or limited inventory
             List<ProductDto> productResponses = products.stream()
-                    .filter(product -> product.getQuantity() > 0) // Assuming '0' indicates unavailable inventory
+                    .filter(product -> product.getQuantity() > 0)
                     .map(product -> modelMapper.map(product, ProductDto.class))
                     .collect(Collectors.toList());
 
-            // Handle case where no products are available after filtering
             if (productResponses.isEmpty()) {
                 log.warn("[{}] No available products found for category: '{}'", traceId, categoryName);
                 return ApiResponse.failure("No available products found for category '" + categoryName + "'.", traceId, HttpStatus.OK);
@@ -254,5 +249,6 @@ public class ProductServiceImpl implements ProductService {
             return ApiResponse.failure("Failed to retrieve products", traceId, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 }

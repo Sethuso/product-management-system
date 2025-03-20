@@ -12,8 +12,5 @@ public class UserDto {
     private String userName;
     private String email;
     private String roleName;
-    private LocalDateTime createdAt;
-    private String createdBy;
-    private LocalDateTime updatedAt;
-    private String updatedBy;
+
 }

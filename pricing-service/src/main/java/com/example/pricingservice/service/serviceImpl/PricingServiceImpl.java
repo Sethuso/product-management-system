@@ -45,7 +45,7 @@ public class PricingServiceImpl implements PriceService {
 
             // Convert DTO to entity
             Price price = modelMapper.map(priceDto, Price.class);
-            price.setCreatedAt(LocalDateTime.now());
+
 
             // Save the price
             Price savedPrice = priceRepository.save(price);
@@ -88,10 +88,7 @@ public class PricingServiceImpl implements PriceService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve price", ex);
         }
     }
-//    @Override
-//    public ApiResponse getPriceByProductId(Long productId) {
-//        return null;
-//    }
+
 
     @Override
     public ApiResponse deletePrice(Long id) {

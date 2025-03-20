@@ -74,7 +74,6 @@ public class UserServiceImpl implements UserService {
             User newUser = modelMapper.map(userRequest, User.class);
             newUser.setRole(defaultRole);
             newUser.setCreatedBy(userRequest.getUserName());
-            newUser.setCreatedAt(LocalDateTime.now());
             newUser.setPassword(encoder.encode(userRequest.getPassword()));
             newUser.setIsActive(true);
 
@@ -184,7 +183,6 @@ public class UserServiceImpl implements UserService {
 
             // Set audit information
             existingUser.setUpdatedBy(userRequest.getUserName());
-            existingUser.setUpdatedAt(LocalDateTime.now());
 
             // Save updated user
             User updatedUser = userRepository.save(existingUser);

@@ -1,10 +1,10 @@
 package com.example.userservice.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 
 import java.util.Set;
 
@@ -19,8 +19,10 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    @NotBlank(message = "Role name is mandatory")
+    @NotBlank(message = "Role name is mandatory")
+    @Column(unique = true, nullable = false)
     private String name;
-//    @OneToMany(mappedBy = "role")
-//    private Set<User> users;
+
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<User> users;
 }

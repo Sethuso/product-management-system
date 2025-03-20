@@ -16,8 +16,8 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI customConfig(){
         return new OpenAPI().info(
-                        new Info().title("user management")
-                                .description("askjdfljasdklfjslkfjsdlkfas")
+                        new Info().title("User Service API")
+                                .description("API Documentation for User service ")
 
                 ).servers(Arrays.asList(new Server().url("http://localhost:8083").description("local-8083"))
                 )

@@ -16,8 +16,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 
     @Query("SELECT p FROM Product p WHERE p.category.name = :categoryName ORDER BY " +
-            "CASE WHEN :sortBy = 'name' THEN p.name " +
-            "WHEN :sortBy = 'price' THEN p.price " +
-            "ELSE p.name END ASC")
-    List<Product> findAvailableProductsByCategoryName(String categoryName, String sortBy);
+            "CASE WHEN :sortBy = 'low' THEN p.price END ASC, " +
+            "CASE WHEN :sortBy = 'high' THEN p.price END DESC, " +
+            "p.name ASC")
+    List<Product> findAvailableProductsByCategoryName(@Param("categoryName") String categoryName, @Param("sortBy") String sortBy);
+
 }

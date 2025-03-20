@@ -4,6 +4,7 @@ import com.example.inventoryservice.dto.InventoryDto;
 import com.example.inventoryservice.feignclient.ProductServiceFeignClient;
 import com.example.inventoryservice.model.Inventory;
 import com.example.inventoryservice.repository.InventoryRepository;
+import com.example.inventoryservice.repository.request.InventoryRequest;
 import com.example.inventoryservice.response.ApiResponse;
 import com.example.inventoryservice.service.InventoryService;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,7 +34,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    public ApiResponse updateInventory(InventoryDto inventoryDto) {
+    public ApiResponse updateInventory(InventoryRequest inventoryDto) {
         String traceId = UUID.randomUUID().toString();
         try {
             log.info("[{}] Checking if product exists via Product Service for Product ID: {}", traceId, inventoryDto.getProductId());
@@ -47,7 +49,6 @@ public class InventoryServiceImpl implements InventoryService {
 
             // Convert DTO to entity
             Inventory inventory = modelMapper.map(inventoryDto, Inventory.class);
-
             // Save inventory to the database
             Inventory savedInventory = inventoryRepository.save(inventory);
 

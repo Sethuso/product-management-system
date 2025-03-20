@@ -1,13 +1,12 @@
-package com.example.inventoryservice.dto;
+package com.example.inventoryservice.repository.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class InventoryDto {
+public class InventoryRequest {
 
-    private Long id;
     @NotNull(message = "Product ID cannot be null")
     @Min(value = 1, message = "Product ID must be a positive number")
     private Long productId;
