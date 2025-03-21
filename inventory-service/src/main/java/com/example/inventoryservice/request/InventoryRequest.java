@@ -1,4 +1,4 @@
-package com.example.inventoryservice.repository.request;
+package com.example.inventoryservice.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

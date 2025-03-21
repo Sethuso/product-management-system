@@ -128,7 +128,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiResponse verify(String email, String password, HttpSession httpSession) {
+    public ApiResponse login(String email, String password, HttpSession httpSession) {
         String traceId = UUID.randomUUID().toString();
         logger.warn("Attempting login for user: {}", email);
 
@@ -234,6 +234,21 @@ public class UserServiceImpl implements UserService {
         } catch (Exception ex) {
             logger.error("Unexpected error occurred while deactivating user: {} | TraceId: {}", ex.getMessage(), traceId);
             throw new RuntimeException("Error occurred while deactivating user: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public ApiResponse validateToken(String token) {
+        String traceId = UUID.randomUUID().toString();
+        logger.info("Validating token: {} | TraceId: {}", token, traceId);
+        try {
+            jwtUtil.validateToken(token);  // This method will throw an exception if the token is invalid
+            String username = jwtUtil.extractUserName(token);
+            logger.info("Token is valid for user: {} | TraceId: {}", username, traceId);
+            return ApiResponse.success(null, "Token is valid.", traceId, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Token validation failed: {} | TraceId: {}", e.getMessage(), traceId);
+            return ApiResponse.failure(e.getMessage(), traceId, HttpStatus.UNAUTHORIZED);
         }
     }
 }

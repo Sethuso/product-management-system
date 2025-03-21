@@ -1,24 +1,22 @@
 package com.example.userservice.controller;
 
 import com.example.userservice.model.Role;
-import com.example.userservice.model.User;
 import com.example.userservice.request.UserRequest;
 import com.example.userservice.response.ApiResponse;
 import com.example.userservice.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("com/api")
+@RequestMapping("/com/api/user-service")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @PostMapping("user")
+    @PostMapping("/users")
     public ApiResponse createUser(@Valid @RequestBody UserRequest user){
         return userService.createUser(user);
     }
@@ -34,12 +32,17 @@ public class UserController {
     }
     @PostMapping("/login")
     public ApiResponse login(@RequestParam String email, @RequestParam String password, HttpSession session) {
-        return userService.verify(email, password, session);
+        return userService.login(email, password, session);
     }
 
     @PutMapping("user")
     public ApiResponse updateUser(@RequestParam Long id , @RequestParam UserRequest userRequest){
         return userService.updateUser(id, userRequest);
+    }
+    @GetMapping("/validate")
+    public ApiResponse validateToken(@RequestParam String token) {
+        ApiResponse response = userService.validateToken(token);
+       return response;
     }
 
     @DeleteMapping("user")

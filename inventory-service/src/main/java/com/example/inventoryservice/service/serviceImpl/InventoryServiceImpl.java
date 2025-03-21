@@ -4,7 +4,7 @@ import com.example.inventoryservice.dto.InventoryDto;
 import com.example.inventoryservice.feignclient.ProductServiceFeignClient;
 import com.example.inventoryservice.model.Inventory;
 import com.example.inventoryservice.repository.InventoryRepository;
-import com.example.inventoryservice.repository.request.InventoryRequest;
+import com.example.inventoryservice.request.InventoryRequest;
 import com.example.inventoryservice.response.ApiResponse;
 import com.example.inventoryservice.service.InventoryService;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,7 +39,7 @@ public class InventoryServiceImpl implements InventoryService {
             log.info("[{}] Checking if product exists via Product Service for Product ID: {}", traceId, inventoryDto.getProductId());
 
             // Check if the product exists via Product Service
-            ApiResponse productResponse = productServiceFeignClient.getProductById(inventoryDto.getProductId());
+            ApiResponse productResponse = productServiceFeignClient.getProductById(inventoryDto.getProductId(),"INVENTORY-SERVICE");
 
             if (productResponse == null || productResponse.getData() == null) {
                 log.error("[{}] Product not found for Product ID: {}", traceId, inventoryDto.getProductId());

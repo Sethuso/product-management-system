@@ -148,7 +148,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testVerify_SuccessfulLogin() {
+    public void testLogin_SuccessfulLogin() {
         MockHttpSession session = new MockHttpSession();
         Authentication authentication = mock(Authentication.class);
         UserPrinciple userPrinciple = mock(UserPrinciple.class);
@@ -159,43 +159,43 @@ public class UserServiceImplTest {
         when(authentication.getPrincipal()).thenReturn(userPrinciple);
         when(jwtUtil.generateToken(any(User.class), eq(session))).thenReturn("jwt-token");
 
-        ApiResponse response = userService.verify("john@example.com", "password", session);
+        ApiResponse response = userService.login("john@example.com", "password", session);
 
         assertTrue(response.isSuccess());
         assertEquals(HttpStatus.OK, response.getHttpStatus());
     }
 
     @Test
-    public void testVerify_InvalidPassword() {
+    public void testLogin_InvalidPassword() {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new RuntimeException("Invalid password"));
 
         MockHttpSession session = new MockHttpSession();
-        ApiResponse response = userService.verify("john@example.com", "wrongpassword", session);
+        ApiResponse response = userService.login("john@example.com", "wrongpassword", session);
 
         assertFalse(response.isSuccess());
         assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());
     }
 
     @Test
-    public void testVerify_UserNotFound() {
+    public void testLogin_UserNotFound() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         MockHttpSession session = new MockHttpSession();
-        ApiResponse response = userService.verify("nonexistent@example.com", "password", session);
+        ApiResponse response = userService.login("nonexistent@example.com", "password", session);
 
         assertFalse(response.isSuccess());
         assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
     }
 
     @Test
-    public void testVerify_AuthenticationFailure() {
+    public void testLogin_AuthenticationFailure() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new UsernameNotFoundException("User not found"));
 
         MockHttpSession session = new MockHttpSession();
-        ApiResponse response = userService.verify("john@example.com", "password", session);
+        ApiResponse response = userService.login("john@example.com", "password", session);
 
         assertFalse(response.isSuccess());
         assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());

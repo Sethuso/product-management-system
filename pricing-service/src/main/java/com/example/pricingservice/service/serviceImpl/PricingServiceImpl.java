@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,7 +37,7 @@ public class PricingServiceImpl implements PriceService {
         String traceId = UUID.randomUUID().toString();
         try {
             log.info("[{}] Attempting to fetch product details for Product ID: {}", traceId, priceDto.getProductId());
-            ApiResponse productResponse = productServiceFeignClient.getProductById(priceDto.getProductId());
+            ApiResponse productResponse = productServiceFeignClient.getProductById(priceDto.getProductId(),"PRICING-SERVICE");
 
             if (productResponse == null || productResponse.getData() == null) {
                 log.error("[{}] Product not found for Product ID: {}", traceId, priceDto.getProductId());
@@ -89,6 +90,10 @@ public class PricingServiceImpl implements PriceService {
         }
     }
 
+    @Override
+    public ApiResponse getPricesByProductIds(List<Long> productIds) {
+        return null;
+    }
 
     @Override
     public ApiResponse deletePrice(Long id) {

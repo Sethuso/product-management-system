@@ -1,4 +1,5 @@
-package com.example.productservice.response;
+package com.example.apigateway.response;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,15 +13,15 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ApiResponse<T> {
+public class ApiResponse {
     private boolean success;
     private String message;
-    private T data; // Generic type for data
+    private Object data; // Can hold either the response data or validation errors
     private String traceId;
     private int httpStatus;
 
-    public static <T> ApiResponse<T> success(T data, String message, String traceId, HttpStatus status) {
-        return ApiResponse.<T>builder()
+    public static ApiResponse success(Object data, String message, String traceId, HttpStatus status) {
+        return ApiResponse.builder()
                 .success(true)
                 .message(message)
                 .data(data)
@@ -29,8 +30,8 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static ApiResponse<Void> failure(String message, String traceId, HttpStatus status) {
-        return ApiResponse.<Void>builder()
+    public static ApiResponse failure(String message, String traceId, HttpStatus status) {
+        return ApiResponse.builder()
                 .success(false)
                 .message(message)
                 .traceId(traceId)
@@ -38,8 +39,8 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static ApiResponse<Map<String, String>> validationFailure(Map<String, String> errors, String traceId, HttpStatus status) {
-        return ApiResponse.<Map<String, String>>builder()
+    public static ApiResponse validationFailure(Map<String, String> errors, String traceId, HttpStatus status) {
+        return ApiResponse.builder()
                 .success(false)
                 .message("Validation failed")
                 .data(errors) // Include validation errors in the data field

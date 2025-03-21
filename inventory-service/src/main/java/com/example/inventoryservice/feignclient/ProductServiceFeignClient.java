@@ -5,9 +5,16 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(name = "product-service", url = "http://localhost:8082/com/api/products")
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+@FeignClient(name = "PRODUCT-SERVICE")
 public interface ProductServiceFeignClient {
 
-    @GetMapping("/getByProductId")
-    ApiResponse getProductById(@RequestParam("id") Long productId);
+    @GetMapping("/com/api/product-service/product")
+    ApiResponse getProductById(
+            @RequestParam("id") Long productId,
+            @RequestHeader("Service-Name") String serviceName
+    );
 }

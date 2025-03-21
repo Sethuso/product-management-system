@@ -99,6 +99,18 @@ public class JwtUtil {
         return  extractClaim(token,Claims::getExpiration);
     }
 
+    public void validateToken(final String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(getKey())
+                    .build()
+                    .parseClaimsJws(token);
+        } catch (JwtException e) {
+            throw new RuntimeException("Invalid JWT Token: " + e.getMessage());
+        }
+    }
+
+
     public String refreshToken(String token) {
         try {
             Claims claims = extractAllClaims(token);

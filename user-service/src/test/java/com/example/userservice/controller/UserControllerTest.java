@@ -1,7 +1,6 @@
 package com.example.userservice.controller;
 
 import com.example.userservice.model.Role;
-import com.example.userservice.model.User;
 import com.example.userservice.request.UserRequest;
 import com.example.userservice.response.ApiResponse;
 import com.example.userservice.service.UserService;
@@ -13,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -108,7 +106,7 @@ public class UserControllerTest {
     @Test
     public void testLogin_Success() {
         // Mock the service response
-        when(userService.verify(anyString(), anyString(), any(HttpSession.class))).thenReturn(apiResponse);
+        when(userService.login(anyString(), anyString(), any(HttpSession.class))).thenReturn(apiResponse);
 
         // Call the controller method
         ApiResponse response = userController.login("john@example.com", "password", session);
@@ -120,7 +118,7 @@ public class UserControllerTest {
         assertEquals(HttpStatus.OK, response.getHttpStatus());
 
         // Verify that the service method was called
-        verify(userService, times(1)).verify(anyString(), anyString(), any(HttpSession.class));
+        verify(userService, times(1)).login(anyString(), anyString(), any(HttpSession.class));
     }
 
     @Test

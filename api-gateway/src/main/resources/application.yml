@@ -1,0 +1,60 @@
+## Application Configuration
+#spring:
+#  application:
+#    name: api-gateway
+#  main:
+#    web-application-type: reactive
+#    allow-bean-definition-overriding: true
+#  cloud:
+#    gateway:
+#      discovery:
+#        locator:
+#          enabled: true
+#          lower-case-service-id: true
+#      routes:
+#        - id: user-service
+#          uri: lb://USER-SERVICE
+#          predicates:
+#            - Path=/com/api/user/**
+#        - id: product-service
+#          uri: lb://PRODUCT-SERVICE
+#          predicates:
+#            - Path=/com/api/product-service/**
+#          filters:
+#            - AuthFilter
+#        - id: inventory-service
+#          uri: lb://INVENTORY-SERVICE
+#          predicates:
+#            - Path=/com/api/inventory-service/**
+#          filters:
+#            - AuthFilter
+#        - id: pricing-service
+#          uri: lb://PRICING-SERVICE
+#          predicates:
+#            - Path=/com/api/price-service/**
+#          filters:
+#            - AuthFilter
+#  config:
+#    enabled: false
+#
+## Server Configuration
+#server:
+#  port: 8081
+#
+## Logging Configuration
+#logging:
+#  level:
+#    org.springframework.web: DEBUG
+#    org.springframework.cloud.gateway: TRACE
+#
+## JWT Configuration
+#jwt:
+#  secret: xdEY0pU7jQ4oTp/u2WOZ+XKLW8+WrUUEeYNah/0URi0=
+#
+## Eureka Configuration
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+#    register-with-eureka: true
+#    fetch-registry: true
