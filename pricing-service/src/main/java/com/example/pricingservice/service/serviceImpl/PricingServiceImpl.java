@@ -64,7 +64,7 @@ public class PricingServiceImpl implements PriceService {
     }
 
     @Override
-    public ApiResponse getPriceByProductId(Long productId) {
+    public PriceDto getPriceByProductId(Long productId) {
         String traceId = UUID.randomUUID().toString();
         try {
             log.info("[{}] Attempting to fetch price details for Product ID: {}", traceId, productId);
@@ -73,7 +73,7 @@ public class PricingServiceImpl implements PriceService {
 
             if (priceOpt.isEmpty()) {
                 log.error("[{}] Price not found for Product ID: {}", traceId, productId);
-                return ApiResponse.failure("Price not found", traceId, HttpStatus.NOT_FOUND);
+                return null;
             }
 
             Price price = priceOpt.get();
@@ -82,7 +82,7 @@ public class PricingServiceImpl implements PriceService {
             PriceDto priceDto = modelMapper.map(price, PriceDto.class);
 
             log.info("[{}] Price retrieved successfully for Product ID: {}", traceId, productId);
-            return ApiResponse.success(priceDto, "Price retrieved successfully", traceId, HttpStatus.OK);
+            return priceDto;
 
         } catch (Exception ex) {
             log.error("[{}] Error while fetching price details: {}", traceId, ex.getMessage());

@@ -1,6 +1,6 @@
 package com.example.apigateway.response;
 
-
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +13,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)  // To exclude null values from the response
 public class ApiResponse {
     private boolean success;
     private String message;
@@ -34,6 +35,7 @@ public class ApiResponse {
         return ApiResponse.builder()
                 .success(false)
                 .message(message)
+                .data(null)
                 .traceId(traceId)
                 .httpStatus(status.value())
                 .build();
@@ -43,7 +45,7 @@ public class ApiResponse {
         return ApiResponse.builder()
                 .success(false)
                 .message("Validation failed")
-                .data(errors) // Include validation errors in the data field
+                .data(errors)
                 .traceId(traceId)
                 .httpStatus(status.value())
                 .build();

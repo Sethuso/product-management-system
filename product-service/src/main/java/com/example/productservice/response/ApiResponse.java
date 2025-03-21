@@ -12,13 +12,14 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ApiResponse<T> {
+public class ApiResponse<T> {  // Use Generics for type safety
     private boolean success;
     private String message;
-    private T data; // Generic type for data
+    private T data; // Type-safe data handling
     private String traceId;
     private int httpStatus;
 
+    // Success Response
     public static <T> ApiResponse<T> success(T data, String message, String traceId, HttpStatus status) {
         return ApiResponse.<T>builder()
                 .success(true)
@@ -29,20 +30,23 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static ApiResponse<Void> failure(String message, String traceId, HttpStatus status) {
-        return ApiResponse.<Void>builder()
+    // Failure Response
+    public static <T> ApiResponse<T> failure(String message, String traceId, HttpStatus status) {
+        return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)
+                .data(null)
                 .traceId(traceId)
                 .httpStatus(status.value())
                 .build();
     }
 
+    // Validation Failure Response
     public static ApiResponse<Map<String, String>> validationFailure(Map<String, String> errors, String traceId, HttpStatus status) {
         return ApiResponse.<Map<String, String>>builder()
                 .success(false)
                 .message("Validation failed")
-                .data(errors) // Include validation errors in the data field
+                .data(errors)
                 .traceId(traceId)
                 .httpStatus(status.value())
                 .build();

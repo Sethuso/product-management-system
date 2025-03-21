@@ -24,6 +24,7 @@
 	</properties>
 
 	<dependencies>
+
 		<!-- Spring Boot Dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

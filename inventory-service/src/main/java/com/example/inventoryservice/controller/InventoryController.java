@@ -1,5 +1,6 @@
 package com.example.inventoryservice.controller;
 
+import com.example.inventoryservice.dto.InventoryDto;
 import com.example.inventoryservice.request.InventoryRequest;
 import com.example.inventoryservice.response.ApiResponse;
 import com.example.inventoryservice.service.InventoryService;
@@ -44,7 +45,7 @@ public class InventoryController {
 
         if ("PRODUCT-SERVICE".equalsIgnoreCase(serviceName)) {
             try {
-                ApiResponse response = inventoryService.getInventoryByProductId(productId);
+                InventoryDto response = inventoryService.getInventoryByProductId(productId);
                 logger.info("[{}] Successfully fetched inventory for productId: {}", traceId, productId);
                 return ApiResponse.success(response, "Inventory fetched successfully", traceId, HttpStatus.OK);
             } catch (Exception e) {

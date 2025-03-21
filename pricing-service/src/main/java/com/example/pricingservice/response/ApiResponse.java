@@ -1,4 +1,5 @@
 package com.example.pricingservice.response;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,15 +12,16 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ApiResponse {
+public class ApiResponse<T> {  // Use Generics for type safety
     private boolean success;
     private String message;
-    private Object data; // Can hold either the response data or validation errors
+    private T data; // Type-safe data handling
     private String traceId;
     private int httpStatus;
 
-    public static ApiResponse success(Object data, String message, String traceId, HttpStatus status) {
-        return ApiResponse.builder()
+    // Success Response
+    public static <T> ApiResponse<T> success(T data, String message, String traceId, HttpStatus status) {
+        return ApiResponse.<T>builder()
                 .success(true)
                 .message(message)
                 .data(data)
@@ -28,20 +30,23 @@ public class ApiResponse {
                 .build();
     }
 
-    public static ApiResponse failure(String message, String traceId, HttpStatus status) {
-        return ApiResponse.builder()
+    // Failure Response
+    public static <T> ApiResponse<T> failure(String message, String traceId, HttpStatus status) {
+        return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)
+                .data(null)
                 .traceId(traceId)
                 .httpStatus(status.value())
                 .build();
     }
 
-    public static ApiResponse validationFailure(Map<String, String> errors, String traceId, HttpStatus status) {
-        return ApiResponse.builder()
+    // Validation Failure Response
+    public static ApiResponse<Map<String, String>> validationFailure(Map<String, String> errors, String traceId, HttpStatus status) {
+        return ApiResponse.<Map<String, String>>builder()
                 .success(false)
                 .message("Validation failed")
-                .data(errors) // Include validation errors in the data field
+                .data(errors)
                 .traceId(traceId)
                 .httpStatus(status.value())
                 .build();

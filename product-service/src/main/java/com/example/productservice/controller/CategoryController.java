@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/com/api/categories")
+@RequestMapping("/com/api/category-service")
 public class CategoryController {
 
     private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
@@ -18,19 +18,19 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    @PostMapping
+    @PostMapping("/categories")
     public ApiResponse createCategory(@Valid @RequestBody CategoryRequest category) {
         logger.info("Request to create category: {}", category.getName());
         return categoryService.createCategory(category);
     }
 
-    @GetMapping
+    @GetMapping("/category")
     public ApiResponse getCategoryById(@RequestParam Long id) {
         logger.info("Request to retrieve category with ID: {}", id);
         return categoryService.getCategoryById(id);
     }
 
-    @GetMapping("/all")
+    @GetMapping("/categories")
     public ApiResponse getAllCategories() {
         logger.info("Request to retrieve all categories");
         return categoryService.getAllCategories();

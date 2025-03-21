@@ -39,7 +39,7 @@ public class PriceController {
     }
 
     @GetMapping("/getProductId")
-    public ApiResponse getPriceByProductId(
+    public ApiResponse<PriceDto> getPriceByProductId(
             @RequestParam("productId") Long productId,
             @RequestHeader(value = "Service-Name", required = false) String serviceName) {
 
@@ -48,12 +48,19 @@ public class PriceController {
 
         if ("PRODUCT-SERVICE".equalsIgnoreCase(serviceName)) {
             try {
-                ApiResponse response = priceService.getPriceByProductId(productId);
-                logger.info("[{}] Successfully fetched price for Product ID: {}", traceId, productId);
-                return ApiResponse.success(response, "Price fetched successfully", traceId, HttpStatus.OK);
+                // Fetch the price from the service
+                PriceDto priceDto = priceService.getPriceByProductId(productId);
+
+                if (priceDto != null) {
+                    logger.info("[{}] Successfully fetched price for Product ID: {}", traceId, productId);
+                    return ApiResponse.success(priceDto, "Price fetched successfully", traceId, HttpStatus.OK);
+                } else {
+                    logger.warn("[{}] Price not found for Product ID: {}", traceId, productId);
+                    return ApiResponse.failure("Price not found for Product ID: " + productId, traceId, HttpStatus.NOT_FOUND);
+                }
             } catch (Exception e) {
                 logger.error("[{}] Error while fetching price for Product ID: {}: {}", traceId, productId, e.getMessage(), e);
-                return ApiResponse.failure("Failed to fetch price", traceId, HttpStatus.INTERNAL_SERVER_ERROR);
+                return ApiResponse.failure("Failed to fetch price. Error: " + e.getMessage(), traceId, HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
 

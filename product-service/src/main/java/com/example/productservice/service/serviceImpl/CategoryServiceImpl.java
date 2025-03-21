@@ -1,5 +1,6 @@
 package com.example.productservice.service.serviceImpl;
 
+import com.example.productservice.dto.CategoryDto;
 import com.example.productservice.exception.ResourceNotFoundException;
 import com.example.productservice.model.Category;
 import com.example.productservice.repository.CategoryRepository;
@@ -14,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -37,15 +37,15 @@ public class CategoryServiceImpl implements CategoryService {
             // Map CategoryRequest to Category entity using ModelMapper
             Category category = modelMapper.map(categoryRequest, Category.class);
 
-            // Set additional fields
-            category.setCreatedAt(LocalDateTime.now());
-
             // Save category to the database
             Category savedCategory = categoryRepository.save(category);
 
+            // Convert saved Category to CategoryDto
+            CategoryDto categoryDto = modelMapper.map(savedCategory, CategoryDto.class);
+
             logger.info("Category created successfully with ID: {} | TraceId: {}", savedCategory.getId(), traceId);
 
-            return ApiResponse.success(savedCategory, "Category created successfully", traceId, HttpStatus.CREATED);
+            return ApiResponse.success(categoryDto, "Category created successfully", traceId, HttpStatus.CREATED);
 
         } catch (Exception e) {
             logger.error("Error creating category: {} | TraceId: {}", e.getMessage(), traceId);
@@ -53,19 +53,35 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
-
     @Override
     public ApiResponse getCategoryById(Long categoryId) {
         String traceId = UUID.randomUUID().toString();
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + categoryId));
+        try {
+            Category category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + categoryId));
 
-        return ApiResponse.success(category, "Category retrieved successfully", traceId, HttpStatus.OK);
+            logger.info("Category retrieved successfully with ID: {} | TraceId: {}", categoryId, traceId);
+
+            return ApiResponse.success(category, "Category retrieved successfully", traceId, HttpStatus.OK);
+
+        } catch (ResourceNotFoundException e) {
+            logger.error("Category not found with ID: {} | TraceId: {}", categoryId, traceId);
+            throw e;
+        }
     }
 
     @Override
     public ApiResponse getAllCategories() {
         String traceId = UUID.randomUUID().toString();
-        return ApiResponse.success(categoryRepository.findAll(), "Categories retrieved successfully", traceId, HttpStatus.OK);
+        try {
+            var categories = categoryRepository.findAll();
+            logger.info("All categories retrieved successfully | TraceId: {}", traceId);
+
+            return ApiResponse.success(categories, "Categories retrieved successfully", traceId, HttpStatus.OK);
+
+        } catch (Exception e) {
+            logger.error("Error retrieving categories: {} | TraceId: {}", e.getMessage(), traceId);
+            throw new RuntimeException("Error retrieving categories: " + e.getMessage());
+        }
     }
 }

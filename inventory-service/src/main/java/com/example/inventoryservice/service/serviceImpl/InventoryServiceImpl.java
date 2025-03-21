@@ -1,6 +1,7 @@
 package com.example.inventoryservice.service.serviceImpl;
 
 import com.example.inventoryservice.dto.InventoryDto;
+import com.example.inventoryservice.exception.ResourceNotFoundException;
 import com.example.inventoryservice.feignclient.ProductServiceFeignClient;
 import com.example.inventoryservice.model.Inventory;
 import com.example.inventoryservice.repository.InventoryRepository;
@@ -62,31 +63,32 @@ public class InventoryServiceImpl implements InventoryService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update inventory", ex);
         }
     }
+@Override
+   public InventoryDto getInventoryByProductId(Long productId) {
 
-    @Override
-    public ApiResponse getInventoryByProductId(Long productId) {
-        String traceId = UUID.randomUUID().toString();
-        try {
-            log.info("[{}] Fetching inventory for Product ID: {}", traceId, productId);
+    String traceId = UUID.randomUUID().toString();
 
-            // Fetch inventory from the database
-            Optional<Inventory> inventoryOpt = inventoryRepository.findByProductId(productId);
+    try {
+           log.info("[{}] Fetching inventory for Product ID: {}", traceId, productId);
 
-            if (inventoryOpt.isEmpty()) {
-                log.error("[{}] Inventory not found for Product ID: {}", traceId, productId);
-                return ApiResponse.failure("Inventory not found", traceId, HttpStatus.NOT_FOUND);
-            }
+        // Fetch inventory from the database
+           Inventory inventory = inventoryRepository.findByProductId(productId);
 
-            // Convert entity to DTO
-            InventoryDto inventoryDto = modelMapper.map(inventoryOpt.get(), InventoryDto.class);
+        if (inventory == null) {
+               log.error("[{}] Inventory not found for Product ID: {}", traceId, productId);
+               throw new ResourceNotFoundException("Inventory not found for Product ID: " + productId);
+           }
 
-            log.info("[{}] Inventory fetched successfully for Product ID: {}", traceId, productId);
-            return ApiResponse.success(inventoryDto, "Inventory fetched successfully", traceId, HttpStatus.OK);
+        // Convert entity to DTO
+           InventoryDto inventoryDto = modelMapper.map(inventory, InventoryDto.class);
 
-        } catch (Exception ex) {
-            log.error("[{}] Error while fetching inventory: {}", traceId, ex.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to fetch inventory", ex);
-        }
-    }
+        log.info("[{}] Inventory fetched successfully for Product ID: {}", traceId, productId);
+           return inventoryDto;
 
-}
+    } catch (ResourceNotFoundException ex) {
+           log.error("[{}] Error while fetching inventory: {}", traceId, ex.getMessage());
+           throw ex; // Rethrow to be handled by Global Exception Handler
+       } catch (Exception ex) {
+           log.error("[{}] Unexpected error while fetching inventory for Product ID: {}. Error: {}", traceId, productId, ex.getMessage(), ex);
+}        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to fetch inventory. Error: " );
+}    }
