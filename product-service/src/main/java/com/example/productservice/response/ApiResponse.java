@@ -17,7 +17,7 @@ public class ApiResponse<T> {  // Use Generics for type safety
     private String message;
     private T data; // Type-safe data handling
     private String traceId;
-    private HttpStatus httpStatus;
+    private int httpStatus;
 
     public ApiResponse(boolean b, String success, PriceResponse priceResponse, HttpStatus httpStatus) {
     }
@@ -30,7 +30,7 @@ public class ApiResponse<T> {  // Use Generics for type safety
                 .message(message)
                 .data(data)
                 .traceId(traceId)
-                .httpStatus(status)
+                .httpStatus(status.value())
                 .build();
     }
 
@@ -41,7 +41,7 @@ public class ApiResponse<T> {  // Use Generics for type safety
                 .message(message)
                 .data(null)
                 .traceId(traceId)
-                .httpStatus(status)
+                .httpStatus(status.value())
                 .build();
     }
 
@@ -52,7 +52,7 @@ public class ApiResponse<T> {  // Use Generics for type safety
                 .message("Validation failed")
                 .data(errors)
                 .traceId(traceId)
-                .httpStatus(status)
+                .httpStatus(status.value())
                 .build();
     }
 }
