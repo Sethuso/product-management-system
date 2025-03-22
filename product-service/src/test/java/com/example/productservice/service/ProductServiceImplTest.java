@@ -84,7 +84,7 @@ public class ProductServiceImplTest {
         productDto = new ProductDto();
         productDto.setId(1L);
         productDto.setName("Test Product");
-        productDto.setCategory(category.getId());
+        productDto.setCategory(category.getName());
 
         priceResponse = new PriceResponse();
         priceResponse.setPrice(100.0);
@@ -209,8 +209,8 @@ public class ProductServiceImplTest {
     @Test
     void getProductById_Success() {
         when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(pricingServiceFeignClient.getPriceByProductId(anyLong())).thenReturn(ApiResponse.success(priceResponse, "Price retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
-        when(inventoryServiceFeignClient.getInventoryByProductId(anyLong())).thenReturn(ApiResponse.success(inventoryResponse, "Inventory retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
+        when(pricingServiceFeignClient.getPriceByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(priceResponse, "Price retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
+        when(inventoryServiceFeignClient.getInventoryByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(inventoryResponse, "Inventory retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
 
         ApiResponse response = productService.getProductById(1L);
 
@@ -237,8 +237,8 @@ public class ProductServiceImplTest {
     void findAvailableProductsByCategory_Success() {
         when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
         when(productRepository.findAvailableProductsByCategoryName(anyString(), anyString())).thenReturn(Collections.singletonList(product));
-        when(pricingServiceFeignClient.getPriceByProductId(anyLong())).thenReturn(ApiResponse.success(priceResponse, "Price retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
-        when(inventoryServiceFeignClient.getInventoryByProductId(anyLong())).thenReturn(ApiResponse.success(inventoryResponse, "Inventory retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
+        when(pricingServiceFeignClient.getPriceByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(priceResponse, "Price retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
+        when(inventoryServiceFeignClient.getInventoryByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(inventoryResponse, "Inventory retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
         when(modelMapper.map(any(Product.class), eq(ProductDto.class))).thenReturn(productDto);
 
         ApiResponse response = productService.findAvailableProductsByCategory("Test Category", "name");

@@ -50,4 +50,12 @@ public class UserController {
         return userService.deleteUser(id);
     }
 
+    @PutMapping("/assign-role")
+    public ApiResponse assignRoleToUser(
+            @RequestParam String email,
+            @RequestParam String roleName) {
+
+        ApiResponse response = userService.assignRoleToUser(email, roleName);
+        return response;
+    }
 }

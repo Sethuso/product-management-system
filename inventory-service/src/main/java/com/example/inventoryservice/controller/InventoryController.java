@@ -43,7 +43,7 @@ public class InventoryController {
         String traceId = UUID.randomUUID().toString();
         logger.info("[{}] Request to fetch inventory for productId: {} from Service: {}", traceId, productId, serviceName);
 
-        if ("PRODUCT-SERVICE".equalsIgnoreCase(serviceName)) {
+        if (serviceName == null ||"PRODUCT-SERVICE".equalsIgnoreCase(serviceName)) {
             try {
                 InventoryDto response = inventoryService.getInventoryByProductId(productId);
                 logger.info("[{}] Successfully fetched inventory for productId: {}", traceId, productId);

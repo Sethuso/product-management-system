@@ -73,7 +73,7 @@ public class ProductControllerTest {
     void getProductById_Success() {
         when(productService.getProductById(anyLong())).thenReturn(apiResponse);
 
-        ApiResponse response = productController.getProductById(1L);
+        ApiResponse response = productController.getProductById(1L,"");
 
         assertNotNull(response);
         assertTrue(response.isSuccess());

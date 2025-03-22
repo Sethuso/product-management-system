@@ -84,4 +84,16 @@ public class CategoryServiceImpl implements CategoryService {
             throw new RuntimeException("Error retrieving categories: " + e.getMessage());
         }
     }
+
+    @Override
+    public Category getCategoryByName(String categoryName) {
+            return categoryRepository.findByName(categoryName)
+                    .orElseThrow(() -> new RuntimeException("Category not found: " + categoryName));
+
+    }
+
+    @Override
+    public Category findById(Long category) {
+        return categoryRepository.findById(category).orElseThrow();
+    }
 }

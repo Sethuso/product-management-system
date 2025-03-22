@@ -11,14 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-//    List<Product> findByCategory_IdAndInventoryGreaterThan(Long categoryId, int inventory);
+
     Optional<Product> findByName(String name);
 
-
-    @Query("SELECT p FROM Product p WHERE p.category.name = :categoryName ORDER BY " +
-            "CASE WHEN :sortBy = 'low' THEN p.price END ASC, " +
-            "CASE WHEN :sortBy = 'high' THEN p.price END DESC, " +
-            "p.name ASC")
-    List<Product> findAvailableProductsByCategoryName(@Param("categoryName") String categoryName, @Param("sortBy") String sortBy);
-
+    @Query("SELECT p FROM Product p WHERE p.category.name = :categoryName")
+    List<Product> findAvailableProductsByCategoryName(@Param("categoryName") String categoryName);
 }

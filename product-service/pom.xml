@@ -18,6 +18,10 @@
 		<spring-cloud.version>2022.0.4</spring-cloud.version>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot3</artifactId>
+		</dependency>
 		<!-- Spring Boot Starters -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

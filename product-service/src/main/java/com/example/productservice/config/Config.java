@@ -29,12 +29,12 @@ public class Config {
                 map().setBrand(source.getBrand());
                 map().setDescription(source.getDescription());
                 map().setCategory(source.getCategory().getName());
-                map().setPrice(source.getPrice());
-
-                using(ctx -> {
-                    Integer quantity = ((Product) ctx.getSource()).getQuantity();
-                    return quantity == 0 ? "Out of Stock" : "In Stock";
-                }).map(source, destination.getQuantityStatus());
+//                map().setPrice(source.getPrice());
+//
+//                using(ctx -> {
+//                    Integer quantity = ((Product) ctx.getSource()).getQuantity();
+//                    return quantity == 0 ? "Out of Stock" : "In Stock";
+//                }).map(source, destination.getQuantityStatus());
 
             }
         });

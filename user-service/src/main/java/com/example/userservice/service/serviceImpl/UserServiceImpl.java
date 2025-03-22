@@ -251,4 +251,24 @@ public class UserServiceImpl implements UserService {
             return ApiResponse.failure(e.getMessage(), traceId, HttpStatus.UNAUTHORIZED);
         }
     }
+    @Override
+    public ApiResponse assignRoleToUser(String email, String roleName) {
+        String traceId = UUID.randomUUID().toString();  // Generate a new traceId
+        logger.info("[{}] Assigning role '{}' to user with email '{}'.", traceId, roleName, email);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found with name: " + roleName));
+
+        user.setRole(role);
+        userRepository.save(user);
+
+        logger.info("[{}] Successfully assigned role '{}' to user '{}'.", traceId, roleName, email);
+        return ApiResponse.success(null, "Role assigned successfully.", traceId, HttpStatus.OK);
+    }
+
+
+
 }

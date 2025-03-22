@@ -19,6 +19,10 @@ public class ApiResponse<T> {  // Use Generics for type safety
     private String traceId;
     private int httpStatus;
 
+    public ApiResponse(boolean b, String success, PriceResponse priceResponse, HttpStatus httpStatus) {
+    }
+
+
     // Success Response
     public static <T> ApiResponse<T> success(T data, String message, String traceId, HttpStatus status) {
         return ApiResponse.<T>builder()

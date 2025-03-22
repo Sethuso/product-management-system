@@ -35,14 +35,6 @@ public class Product {
     @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be negative")
-    private Double price;
-
-    @NotNull(message = "Quantity is required")
-    @Min(value = 0, message = "Quantity cannot be negative")
-    private Integer quantity;
-
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
