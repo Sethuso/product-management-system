@@ -49,6 +49,9 @@ public class User {
 
     private Boolean isActive;
 
+    public User(long l, String john, String mail, String password123, Role userRole) {
+    }
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

@@ -14,4 +14,7 @@ public interface UserService {
  ApiResponse deleteUser(Long userId);
  ApiResponse validateToken( String token);
  ApiResponse assignRoleToUser(String email, String roleName);
+
+ ApiResponse getAllUsers();
+
 }

@@ -10,7 +10,4 @@ public interface PriceService {
 
     ApiResponse createOrUpdatePrice(PriceDto price);
     PriceDto getPriceByProductId(Long productId);
-    ApiResponse deletePrice(Long id);
-
-    ApiResponse getPricesByProductIds(List<Long> productIds);
 }

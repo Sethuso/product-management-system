@@ -1,4 +1,6 @@
 package com.example.userservice.controller;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.userservice.model.Role;
 import com.example.userservice.request.UserRequest;
@@ -7,153 +9,309 @@ import com.example.userservice.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import java.util.UUID;
 
-@ExtendWith(MockitoExtension.class)
 public class UserControllerTest {
 
     @Mock
     private UserService userService;
 
-    @Mock
-    private HttpSession session;
-
     @InjectMocks
     private UserController userController;
 
-    private UserRequest userRequest;
-    private Role role;
-    private ApiResponse apiResponse;
-
     @BeforeEach
     public void setUp() {
-        userRequest = new UserRequest();
-        userRequest.setUserName("John");
-        userRequest.setEmail("john@example.com");
-        userRequest.setPassword("password");
-
-        role = new Role();
-        role.setName("USER");
-
-        apiResponse = new ApiResponse();
-        apiResponse.setSuccess(true);
-        apiResponse.setMessage("Success");
-        apiResponse.setHttpStatus(200);
+        MockitoAnnotations.openMocks(this);
     }
+
+    // Test cases for createUser endpoint
 
     @Test
     public void testCreateUser_Success() {
-        // Mock the service response
-        when(userService.createUser(any(UserRequest.class))).thenReturn(apiResponse);
+        // Arrange
+        UserRequest userRequest = new UserRequest();
+        userRequest.setUserName("testUser");
 
-        // Call the controller method
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "User created successfully", UUID.randomUUID().toString(), HttpStatus.CREATED);
+        when(userService.createUser(userRequest)).thenReturn(expectedResponse);
+
+        // Act
         ApiResponse response = userController.createUser(userRequest);
 
-        // Verify the results
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals("Success", response.getMessage());
-        assertEquals(HttpStatus.OK, response.getHttpStatus());
-
-        // Verify that the service method was called
-        verify(userService, times(1)).createUser(any(UserRequest.class));
+        // Assert
+        assertEquals(HttpStatus.CREATED.value(), response.getHttpStatus());
+        assertEquals("User created successfully", response.getMessage());
+        assertNotNull(response.getData());
     }
+
+    @Test
+    public void testCreateUser_Exception() {
+        // Arrange
+        UserRequest userRequest = new UserRequest();
+        userRequest.setUserName("testUser");
+
+        when(userService.createUser(userRequest)).thenThrow(new RuntimeException("Service Error"));
+
+        // Act
+        ApiResponse response = userController.createUser(userRequest);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to create user"));
+    }
+
+    // Test cases for createRole endpoint
 
     @Test
     public void testCreateRole_Success() {
-        // Mock the service response
-        when(userService.createRole(any(Role.class))).thenReturn(apiResponse);
+        // Arrange
+        Role role = new Role();
+        role.setName("ADMIN");
 
-        // Call the controller method
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "Role created successfully", UUID.randomUUID().toString(), HttpStatus.CREATED);
+        when(userService.createRole(role)).thenReturn(expectedResponse);
+
+        // Act
         ApiResponse response = userController.createRole(role);
 
-        // Verify the results
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals("Success", response.getMessage());
-        assertEquals(HttpStatus.OK, response.getHttpStatus());
-
-        // Verify that the service method was called
-        verify(userService, times(1)).createRole(any(Role.class));
+        // Assert
+        assertEquals(HttpStatus.CREATED.value(), response.getHttpStatus());
+        assertEquals("Role created successfully", response.getMessage());
+        assertNotNull(response.getData());
     }
 
     @Test
-    public void testGetUserById_Success() {
-        // Mock the service response
-        when(userService.getUserById(anyLong())).thenReturn(apiResponse);
+    public void testCreateRole_Exception() {
+        // Arrange
+        Role role = new Role();
+        role.setName("ADMIN");
 
-        // Call the controller method
-        ApiResponse response = userController.getByUserId(1L);
+        when(userService.createRole(role)).thenThrow(new RuntimeException("Service Error"));
 
-        // Verify the results
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals("Success", response.getMessage());
-        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        // Act
+        ApiResponse response = userController.createRole(role);
 
-        // Verify that the service method was called
-        verify(userService, times(1)).getUserById(anyLong());
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to create role"));
     }
+
+    // Test cases for getByUserId endpoint
+
+    @Test
+    public void testGetByUserId_Success() {
+        // Arrange
+        Long userId = 1L;
+
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "User retrieved successfully", UUID.randomUUID().toString(), HttpStatus.OK);
+        when(userService.getUserById(userId)).thenReturn(expectedResponse);
+
+        // Act
+        ApiResponse response = userController.getByUserId(userId);
+
+        // Assert
+        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals("User retrieved successfully", response.getMessage());
+        assertNotNull(response.getData());
+    }
+
+    @Test
+    public void testGetByUserId_Exception() {
+        // Arrange
+        Long userId = 1L;
+
+        when(userService.getUserById(userId)).thenThrow(new RuntimeException("Service Error"));
+
+        // Act
+        ApiResponse response = userController.getByUserId(userId);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to retrieve user"));
+    }
+
+    // Test cases for login endpoint
 
     @Test
     public void testLogin_Success() {
-        // Mock the service response
-        when(userService.login(anyString(), anyString(), any(HttpSession.class))).thenReturn(apiResponse);
+        // Arrange
+        String email = "test@example.com";
+        String password = "password";
+        HttpSession session = mock(HttpSession.class);
 
-        // Call the controller method
-        ApiResponse response = userController.login("john@example.com", "password", session);
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "Login successful", UUID.randomUUID().toString(), HttpStatus.OK);
+        when(userService.login(email, password, session)).thenReturn(expectedResponse);
 
-        // Verify the results
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals("Success", response.getMessage());
-        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        // Act
+        ApiResponse response = userController.login(email, password, session);
 
-        // Verify that the service method was called
-        verify(userService, times(1)).login(anyString(), anyString(), any(HttpSession.class));
+        // Assert
+        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals("Login successful", response.getMessage());
+        assertNotNull(response.getData());
     }
+
+    @Test
+    public void testLogin_Exception() {
+        // Arrange
+        String email = "test@example.com";
+        String password = "password";
+        HttpSession session = mock(HttpSession.class);
+
+        when(userService.login(email, password, session)).thenThrow(new RuntimeException("Service Error"));
+
+        // Act
+        ApiResponse response = userController.login(email, password, session);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to login"));
+    }
+
+    // Test cases for updateUser endpoint
 
     @Test
     public void testUpdateUser_Success() {
-        // Mock the service response
-        when(userService.updateUser(anyLong(), any(UserRequest.class))).thenReturn(apiResponse);
+        // Arrange
+        Long userId = 1L;
+        UserRequest userRequest = new UserRequest();
+        userRequest.setUserName("updatedUser");
 
-        // Call the controller method
-        ApiResponse response = userController.updateUser(1L, userRequest);
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "User updated successfully", UUID.randomUUID().toString(), HttpStatus.OK);
+        when(userService.updateUser(userId, userRequest)).thenReturn(expectedResponse);
 
-        // Verify the results
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals("Success", response.getMessage());
-        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        // Act
+        ApiResponse response = userController.updateUser(userId, userRequest);
 
-        // Verify that the service method was called
-        verify(userService, times(1)).updateUser(anyLong(), any(UserRequest.class));
+        // Assert
+        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals("User updated successfully", response.getMessage());
+        assertNotNull(response.getData());
     }
 
     @Test
+    public void testUpdateUser_Exception() {
+        // Arrange
+        Long userId = 1L;
+        UserRequest userRequest = new UserRequest();
+        userRequest.setUserName("updatedUser");
+
+        when(userService.updateUser(userId, userRequest)).thenThrow(new RuntimeException("Service Error"));
+
+        // Act
+        ApiResponse response = userController.updateUser(userId, userRequest);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to update user"));
+    }
+
+    // Test cases for validateToken endpoint
+
+    @Test
+    public void testValidateToken_Success() {
+        // Arrange
+        String token = "validToken";
+
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "Token is valid", UUID.randomUUID().toString(), HttpStatus.OK);
+        when(userService.validateToken(token)).thenReturn(expectedResponse);
+
+        // Act
+        ApiResponse response = userController.validateToken(token);
+
+        // Assert
+        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals("Token is valid", response.getMessage());
+        assertNotNull(response.getData());
+    }
+
+    @Test
+    public void testValidateToken_Exception() {
+        // Arrange
+        String token = "invalidToken";
+
+        when(userService.validateToken(token)).thenThrow(new RuntimeException("Service Error"));
+
+        // Act
+        ApiResponse response = userController.validateToken(token);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to validate token"));
+    }
+
+    // Test cases for deleteUser endpoint
+
+    @Test
     public void testDeleteUser_Success() {
-        // Mock the service response
-        when(userService.deleteUser(anyLong())).thenReturn(apiResponse);
+        // Arrange
+        Long userId = 1L;
 
-        // Call the controller method
-        ApiResponse response = userController.deleteUser(1L);
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "User deleted successfully", UUID.randomUUID().toString(), HttpStatus.OK);
+        when(userService.deleteUser(userId)).thenReturn(expectedResponse);
 
-        // Verify the results
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals("Success", response.getMessage());
-        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        // Act
+        ApiResponse response = userController.deleteUser(userId);
 
-        // Verify that the service method was called
-        verify(userService, times(1)).deleteUser(anyLong());
+        // Assert
+        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals("User deleted successfully", response.getMessage());
+        assertNotNull(response.getData());
+    }
+
+    @Test
+    public void testDeleteUser_Exception() {
+        // Arrange
+        Long userId = 1L;
+
+        when(userService.deleteUser(userId)).thenThrow(new RuntimeException("Service Error"));
+
+        // Act
+        ApiResponse response = userController.deleteUser(userId);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to delete user"));
+    }
+
+    // Test cases for assignRoleToUser endpoint
+
+    @Test
+    public void testAssignRoleToUser_Success() {
+        // Arrange
+        String email = "test@example.com";
+        String roleName = "ADMIN";
+
+        ApiResponse expectedResponse = ApiResponse.success(new Object(), "Role assigned successfully", UUID.randomUUID().toString(), HttpStatus.OK);
+        when(userService.assignRoleToUser(email, roleName)).thenReturn(expectedResponse);
+
+        // Act
+        ApiResponse response = userController.assignRoleToUser(email, roleName);
+
+        // Assert
+        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals("Role assigned successfully", response.getMessage());
+        assertNotNull(response.getData());
+    }
+
+    @Test
+    public void testAssignRoleToUser_Exception() {
+        // Arrange
+        String email = "test@example.com";
+        String roleName = "ADMIN";
+
+        when(userService.assignRoleToUser(email, roleName)).thenThrow(new RuntimeException("Service Error"));
+
+        // Act
+        ApiResponse response = userController.assignRoleToUser(email, roleName);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getHttpStatus());
+        assertTrue(response.getMessage().contains("Failed to assign role"));
     }
 }

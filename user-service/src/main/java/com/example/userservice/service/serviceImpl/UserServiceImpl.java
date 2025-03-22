@@ -3,6 +3,7 @@ package com.example.userservice.service.serviceImpl;
 import com.example.userservice.dto.UserDto;
 import com.example.userservice.exception.ResourceNotFoundException;
 import com.example.userservice.exception.RoleNotFoundException;
+import com.example.userservice.exception.UserCreationException;
 import com.example.userservice.model.Role;
 import com.example.userservice.model.User;
 import com.example.userservice.model.UserPrinciple;
@@ -16,6 +17,7 @@ import jakarta.servlet.http.HttpSession;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -90,8 +93,9 @@ public class UserServiceImpl implements UserService {
 
         } catch (Exception ex) {
             logger.error("Error occurred while creating user: {} | TraceId: {}", ex.getMessage(), traceId);
-            throw new RuntimeException(ex.getMessage()); // Let GlobalExceptionHandler handle this
+            throw new UserCreationException("Failed to create user: " + ex.getMessage());
         }
+
     }
 
     @Override
@@ -203,39 +207,26 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Error occurred while updating user: " + ex.getMessage());
         }
     }
-
     @Override
     public ApiResponse deleteUser(Long userId) {
-        String traceId = UUID.randomUUID().toString();
-        try {
-            logger.info("Deactivating user with ID: {} | TraceId: {}", userId, traceId);
+        logger.info("Deactivating user with ID: {} | TraceId: {}", userId, MDC.get("traceId"));
 
-            // Find the user by ID
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        User deactivatedUser = userRepository.findById(userId).orElse(null);
 
-            // Set the user as inactive
-            user.setIsActive(false);
-
-            // Save the updated user
-            User deactivatedUser = userRepository.save(user);
-
-            // Map User to UserDto
-            UserDto userDto = modelMapper.map(deactivatedUser, UserDto.class);
-            userDto.setRoleName(deactivatedUser.getRole().getName()); // Set role name explicitly
-
-            logger.info("User deactivated successfully with ID: {} | TraceId: {}", deactivatedUser.getUserId(), traceId);
-
-            return ApiResponse.success(userDto, "User deactivated successfully.", traceId, HttpStatus.OK);
-
-        } catch (ResourceNotFoundException ex) {
-            logger.error("Error deactivating user: {} | TraceId: {}", ex.getMessage(), traceId);
-            return ApiResponse.failure(ex.getMessage(), traceId, HttpStatus.NOT_FOUND);
-        } catch (Exception ex) {
-            logger.error("Unexpected error occurred while deactivating user: {} | TraceId: {}", ex.getMessage(), traceId);
-            throw new RuntimeException("Error occurred while deactivating user: " + ex.getMessage());
+        if (deactivatedUser == null) {
+            logger.error("User with ID {} not found | TraceId: {}", userId, MDC.get("traceId"));
+            return ApiResponse.failure("User with ID " + userId + " not found", MDC.get("traceId"), HttpStatus.NOT_FOUND);
         }
+
+        deactivatedUser.setIsActive(false);
+        userRepository.save(deactivatedUser);
+
+        String roleName = deactivatedUser.getRole().getName();
+
+        logger.info("User with ID {} successfully deactivated, Role: {} | TraceId: {}", userId, roleName, MDC.get("traceId"));
+        return ApiResponse.success(null, "User successfully deactivated", MDC.get("traceId"), HttpStatus.OK);
     }
+
 
     @Override
     public ApiResponse validateToken(String token) {
@@ -269,6 +260,36 @@ public class UserServiceImpl implements UserService {
         return ApiResponse.success(null, "Role assigned successfully.", traceId, HttpStatus.OK);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse getAllUsers() {
+        String traceId = UUID.randomUUID().toString();
+        logger.info("Fetching all users | TraceId: {}", traceId);
+
+        try {
+            // Fetch all users from the repository
+            List<User> users = userRepository.findAll();
+
+            if (users.isEmpty()) {
+                logger.warn("No users found in the database | TraceId: {}", traceId);
+                return ApiResponse.failure("No users found.", traceId, HttpStatus.NOT_FOUND);
+            }
+
+            // Map Users to UserDto list
+            List<UserDto> userDtos = users.stream().map(user -> {
+                UserDto userDto = modelMapper.map(user, UserDto.class);
+                userDto.setRoleName(user.getRole().getName()); // Set role name explicitly
+                return userDto;
+            }).toList();
+
+            logger.info("Successfully fetched all users | TraceId: {}", traceId);
+            return ApiResponse.success(userDtos, "Users retrieved successfully.", traceId, HttpStatus.OK);
+
+        } catch (Exception ex) {
+            logger.error("Error occurred while fetching users: {} | TraceId: {}", ex.getMessage(), traceId);
+            return ApiResponse.failure("An error occurred while fetching users.", traceId, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 
 }

@@ -57,7 +57,7 @@ public class ProductController {
     @GetMapping("/products/category")
     public ApiResponse findAvailableProductsByCategory(
             @RequestParam String categoryName,
-            @RequestParam(defaultValue = "low") String priceRange) {
+            @RequestParam(defaultValue = "low") String priceRange){
         categoryName = categoryName.trim();
         logger.info("Request to find available products by category: {}", categoryName);
         return productService.findAvailableProductsByCategory(categoryName, priceRange);

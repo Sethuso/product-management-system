@@ -56,7 +56,7 @@ public class CategoryServiceImplTest {
         apiResponse = ApiResponse.builder()
                 .success(true)
                 .message("Success")
-                .httpStatus(HttpStatus.OK.value())
+                .httpStatus(HttpStatus.OK)
                 .build();
     }
 

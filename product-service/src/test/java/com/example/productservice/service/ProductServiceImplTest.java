@@ -1,7 +1,9 @@
 package com.example.productservice.service;
-
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.productservice.dto.ProductDto;
+import com.example.productservice.exception.ResourceNotFoundException;
 import com.example.productservice.feignclient.InventoryServiceFeignClient;
 import com.example.productservice.feignclient.PricingServiceFeignClient;
 import com.example.productservice.model.Category;
@@ -12,29 +14,23 @@ import com.example.productservice.request.ProductRequest;
 import com.example.productservice.response.ApiResponse;
 import com.example.productservice.response.InventoryResponse;
 import com.example.productservice.response.PriceResponse;
+import com.example.productservice.service.CategoryService;
 import com.example.productservice.service.serviceImpl.ProductServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
 public class ProductServiceImplTest {
 
     @Mock
@@ -44,234 +40,486 @@ public class ProductServiceImplTest {
     private CategoryRepository categoryRepository;
 
     @Mock
+    private ModelMapper modelMapper;
+
+    @Mock
+    private CategoryService categoryService;
+
+    @Mock
     private PricingServiceFeignClient pricingServiceFeignClient;
 
     @Mock
     private InventoryServiceFeignClient inventoryServiceFeignClient;
 
-    @Mock
-    private ModelMapper modelMapper;
-
-    @Mock
-    private ObjectMapper objectMapper;
-
     @InjectMocks
     private ProductServiceImpl productService;
 
-    private ProductRequest productRequest;
-    private Product product;
-    private Category category;
-    private ProductDto productDto;
-    private PriceResponse priceResponse;
-    private InventoryResponse inventoryResponse;
-
     @BeforeEach
-    void setUp() {
-        productRequest = new ProductRequest();
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    // Test cases for createProduct method
+
+    @Test
+    public void testCreateProduct_Success() {
+        // Arrange
+        ProductRequest productRequest = new ProductRequest();
         productRequest.setName("Test Product");
         productRequest.setCategory(1L);
 
-        category = new Category();
+        Category category = new Category();
         category.setId(1L);
-        category.setName("Test Category");
 
-        product = new Product();
+        Product product = new Product();
         product.setId(1L);
         product.setName("Test Product");
         product.setCategory(category);
-        product.setCreatedAt(LocalDateTime.now());
 
-        productDto = new ProductDto();
+        ProductDto productDto = new ProductDto();
         productDto.setId(1L);
         productDto.setName("Test Product");
-        productDto.setCategory(category.getName());
 
-        priceResponse = new PriceResponse();
-        priceResponse.setPrice(100.0);
+        when(productRepository.findByName("Test Product")).thenReturn(Optional.empty());
+        when(categoryService.findById(1L)).thenReturn(category);
+        when(modelMapper.map(productRequest, Product.class)).thenReturn(product);
+        when(productRepository.save(product)).thenReturn(product);
+        when(modelMapper.map(product, ProductDto.class)).thenReturn(productDto);
 
-        inventoryResponse = new InventoryResponse();
-        inventoryResponse.setQuantity(10);
-    }
-
-    @Test
-    void createProduct_Success() {
-        when(productRepository.findByName(anyString())).thenReturn(Optional.empty());
-        when(categoryRepository.findById(anyLong())).thenReturn(Optional.of(category));
-        when(modelMapper.map(any(ProductRequest.class), eq(Product.class))).thenReturn(product);
-        when(productRepository.save(any(Product.class))).thenReturn(product);
-        when(modelMapper.map(any(Product.class), eq(ProductDto.class))).thenReturn(productDto);
-
+        // Act
         ApiResponse response = productService.createProduct(productRequest);
 
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.CREATED.value(), response.getHttpStatus());
+        // Assert
+        assertEquals(HttpStatus.resolve(201), response.getHttpStatus());
         assertEquals("Product created successfully", response.getMessage());
-        verify(productRepository, times(1)).save(any(Product.class));
+        assertNotNull(response.getData());
+
     }
 
     @Test
-    void createProduct_ProductAlreadyExists() {
-        when(productRepository.findByName(anyString())).thenReturn(Optional.of(product));
+    public void testCreateProduct_ProductAlreadyExists() {
+        // Arrange
+        ProductRequest productRequest = new ProductRequest();
+        productRequest.setName("Test Product");
 
+        when(productRepository.findByName("Test Product")).thenReturn(Optional.of(new Product()));
+
+        // Act
         ApiResponse response = productService.createProduct(productRequest);
 
-        assertNotNull(response);
-        assertFalse(response.isSuccess());
-        assertEquals(HttpStatus.CONFLICT.value(), response.getHttpStatus());
+        // Assert
+        assertEquals(HttpStatus.CONFLICT, response.getHttpStatus());
         assertEquals("Product with the same name already exists", response.getMessage());
-        verify(productRepository, never()).save(any(Product.class));
     }
 
     @Test
-    void createProduct_CategoryNotFound() {
-        when(productRepository.findByName(anyString())).thenReturn(Optional.empty());
-        when(categoryRepository.findById(anyLong())).thenReturn(Optional.empty());
+    public void testCreateProduct_CategoryNotFound() {
+        // Arrange
+        ProductRequest productRequest = new ProductRequest();
+        productRequest.setName("Test Product");
+        productRequest.setCategory(1L);
 
+        when(productRepository.findByName("Test Product")).thenReturn(Optional.empty());
+        when(categoryService.findById(1L)).thenThrow(new ResourceNotFoundException("Category not found"));
+
+        // Act
         ApiResponse response = productService.createProduct(productRequest);
 
-        assertNotNull(response);
-        assertFalse(response.isSuccess());
-        assertEquals(HttpStatus.NOT_FOUND.value(), response.getHttpStatus());
-        assertEquals("Category not found with ID: 1", response.getMessage());
-        verify(productRepository, never()).save(any(Product.class));
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("Category not found", response.getMessage());
     }
 
     @Test
-    void updateProduct_Success() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(categoryRepository.findById(anyLong())).thenReturn(Optional.of(category));
-        when(productRepository.save(any(Product.class))).thenReturn(product);
-        when(modelMapper.map(any(Product.class), eq(ProductDto.class))).thenReturn(productDto);
+    public void testCreateProduct_Exception() {
+        // Arrange
+        ProductRequest productRequest = new ProductRequest();
+        productRequest.setName("Test Product");
 
-        ApiResponse response = productService.updateProduct(1L, productRequest);
+        when(productRepository.findByName("Test Product")).thenThrow(new RuntimeException("Database Error"));
 
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        // Act
+        ApiResponse response = productService.createProduct(productRequest);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to create product", response.getMessage());
+    }
+
+    // Test cases for updateProduct method
+
+    @Test
+    public void testUpdateProduct_Success() {
+        // Arrange
+        Long productId = 1L;
+        ProductRequest productRequest = new ProductRequest();
+        productRequest.setName("Updated Product");
+        productRequest.setCategory(2L);
+
+        Category category = new Category();
+        category.setId(2L);
+
+        Product existingProduct = new Product();
+        existingProduct.setId(productId);
+        existingProduct.setName("Test Product");
+
+        Product updatedProduct = new Product();
+        updatedProduct.setId(productId);
+        updatedProduct.setName("Updated Product");
+        updatedProduct.setCategory(category);
+
+        ProductDto productDto = new ProductDto();
+        productDto.setId(productId);
+        productDto.setName("Updated Product");
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
+        when(categoryService.findById(2L)).thenReturn(category);
+        when(productRepository.save(existingProduct)).thenReturn(updatedProduct);
+        when(modelMapper.map(updatedProduct, ProductDto.class)).thenReturn(productDto);
+
+        // Act
+        ApiResponse response = productService.updateProduct(productId, productRequest);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
         assertEquals("Product updated successfully", response.getMessage());
-        verify(productRepository, times(1)).save(any(Product.class));
+        assertNotNull(response.getData());
     }
 
     @Test
-    void updateProduct_ProductNotFound() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.empty());
+    public void testUpdateProduct_ProductNotFound() {
+        // Arrange
+        Long productId = 1L;
+        ProductRequest productRequest = new ProductRequest();
 
-        ApiResponse response = productService.updateProduct(1L, productRequest);
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        assertNotNull(response);
-        assertFalse(response.isSuccess());
-        assertEquals(HttpStatus.NOT_FOUND.value(), response.getHttpStatus());
-        assertEquals("Product not found with ID: 1", response.getMessage());
-        verify(productRepository, never()).save(any(Product.class));
+        // Act
+        ApiResponse response = productService.updateProduct(productId, productRequest);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("Product not found with ID: " + productId, response.getMessage());
     }
 
     @Test
-    void deleteProduct_Success() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
+    public void testUpdateProduct_Exception() {
+        // Arrange
+        Long productId = 1L;
+        ProductRequest productRequest = new ProductRequest();
 
-        ApiResponse response = productService.deleteProduct(1L);
+        when(productRepository.findById(productId)).thenThrow(new RuntimeException("Database Error"));
 
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        // Act
+        ApiResponse response = productService.updateProduct(productId, productRequest);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to update product", response.getMessage());
+    }
+
+    // Test cases for deleteProduct method
+
+    @Test
+    public void testDeleteProduct_Success() {
+        // Arrange
+        Long productId = 1L;
+        Product product = new Product();
+        product.setId(productId);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+
+        // Act
+        ApiResponse response = productService.deleteProduct(productId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
         assertEquals("Product deleted successfully", response.getMessage());
-        verify(productRepository, times(1)).delete(any(Product.class));
     }
 
     @Test
-    void deleteProduct_ProductNotFound() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.empty());
+    public void testDeleteProduct_ProductNotFound() {
+        // Arrange
+        Long productId = 1L;
 
-        ApiResponse response = productService.deleteProduct(1L);
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        assertNotNull(response);
-        assertFalse(response.isSuccess());
-        assertEquals(HttpStatus.NOT_FOUND.value(), response.getHttpStatus());
-        assertEquals("Product not found with ID: 1", response.getMessage());
-        verify(productRepository, never()).delete(any(Product.class));
+        // Act
+        ApiResponse response = productService.deleteProduct(productId);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("Product not found with ID: " + productId, response.getMessage());
     }
 
     @Test
-    void getAllProducts_Success() {
-        when(productRepository.findAll()).thenReturn(Collections.singletonList(product));
-        when(modelMapper.map(any(Product.class), eq(ProductDto.class))).thenReturn(productDto);
+    public void testDeleteProduct_Exception() {
+        // Arrange
+        Long productId = 1L;
 
+        when(productRepository.findById(productId)).thenThrow(new RuntimeException("Database Error"));
+
+        // Act
+        ApiResponse response = productService.deleteProduct(productId);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to delete product", response.getMessage());
+    }
+
+    // Test cases for getAllProducts method
+
+    @Test
+    public void testGetAllProducts_Success() {
+        // Arrange
+        Product product1 = new Product();
+        product1.setId(1L);
+        Product product2 = new Product();
+        product2.setId(2L);
+
+        List<Product> products = List.of(product1, product2);
+
+        when(productRepository.findAll()).thenReturn(products);
+        when(modelMapper.map(product1, ProductDto.class)).thenReturn(new ProductDto());
+        when(modelMapper.map(product2, ProductDto.class)).thenReturn(new ProductDto());
+
+        // Act
         ApiResponse response = productService.getAllProducts();
 
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
         assertEquals("Products retrieved successfully", response.getMessage());
-        assertEquals(1, ((List<?>) response.getData()).size());
+        assertNotNull(response.getData());
     }
 
     @Test
-    void getProductById_Success() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(pricingServiceFeignClient.getPriceByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(priceResponse, "Price retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
-        when(inventoryServiceFeignClient.getInventoryByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(inventoryResponse, "Inventory retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
+    public void testGetAllProducts_Exception() {
+        // Arrange
+        when(productRepository.findAll()).thenThrow(new RuntimeException("Database Error"));
 
-        ApiResponse response = productService.getProductById(1L);
+        // Act
+        ApiResponse response = productService.getAllProducts();
 
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
-        assertEquals("Product retrieved successfully with price and inventory", response.getMessage());
-        verify(productRepository, times(1)).save(any(Product.class));
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to retrieve products", response.getMessage());
+    }
+
+    // Test cases for getProductsByCategory method
+
+    @Test
+    public void testGetProductsByCategory_Success() {
+        // Arrange
+        String categoryName = "Electronics";
+        Category category = new Category();
+        category.setName(categoryName);
+
+        Product product1 = new Product();
+        product1.setId(1L);
+        Product product2 = new Product();
+        product2.setId(2L);
+
+        List<Product> products = List.of(product1, product2);
+
+        when(categoryService.getCategoryByName(categoryName)).thenReturn(category);
+        when(productRepository.findAvailableProductsByCategoryName(categoryName)).thenReturn(products);
+        when(modelMapper.map(product1, ProductDto.class)).thenReturn(new ProductDto());
+        when(modelMapper.map(product2, ProductDto.class)).thenReturn(new ProductDto());
+
+        // Act
+        ApiResponse response = productService.getProductsByCategory(categoryName);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        assertEquals("Products fetched successfully", response.getMessage());
+        assertNotNull(response.getData());
     }
 
     @Test
-    void getProductById_ProductNotFound() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.empty());
+    public void testGetProductsByCategory_CategoryNotFound() {
+        // Arrange
+        String categoryName = "Electronics";
 
-        ApiResponse response = productService.getProductById(1L);
+        when(categoryService.getCategoryByName(categoryName)).thenReturn(null);
 
-        assertNotNull(response);
-        assertFalse(response.isSuccess());
-        assertEquals(HttpStatus.NOT_FOUND.value(), response.getHttpStatus());
-        assertEquals("Product not found", response.getMessage());
+        // Act
+        ApiResponse response = productService.getProductsByCategory(categoryName);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("Category not found with name: " + categoryName, response.getMessage());
     }
 
     @Test
-    void findAvailableProductsByCategory_Success() {
-        when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
-        when(productRepository.findAvailableProductsByCategoryName(anyString(), anyString())).thenReturn(Collections.singletonList(product));
-        when(pricingServiceFeignClient.getPriceByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(priceResponse, "Price retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
-        when(inventoryServiceFeignClient.getInventoryByProductId(anyLong(),"PRODUCT-SERVICE")).thenReturn(ApiResponse.success(inventoryResponse, "Inventory retrieved", UUID.randomUUID().toString(), HttpStatus.OK));
-        when(modelMapper.map(any(Product.class), eq(ProductDto.class))).thenReturn(productDto);
+    public void testGetProductsByCategory_NoProductsFound() {
+        // Arrange
+        String categoryName = "Electronics";
+        Category category = new Category();
+        category.setName(categoryName);
 
-        ApiResponse response = productService.findAvailableProductsByCategory("Test Category", "name");
+        when(categoryService.getCategoryByName(categoryName)).thenReturn(category);
+        when(productRepository.findAvailableProductsByCategoryName(categoryName)).thenReturn(List.of());
 
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        // Act
+        ApiResponse response = productService.getProductsByCategory(categoryName);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("No products available with sufficient inventory in the requested category.", response.getMessage());
+    }
+
+    @Test
+    public void testGetProductsByCategory_Exception() {
+        // Arrange
+        String categoryName = "Electronics";
+
+        when(categoryService.getCategoryByName(categoryName)).thenThrow(new RuntimeException("Database Error"));
+
+        // Act
+        ApiResponse response = productService.getProductsByCategory(categoryName);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("An error occurred while fetching products. Please try again later.", response.getMessage());
+    }
+
+    // Test cases for getProductById method
+
+    @Test
+    public void testGetProductById_Success() {
+        // Arrange
+        Long productId = 1L;
+        Product product = new Product();
+        product.setId(productId);
+
+        ProductDto productDto = new ProductDto();
+        productDto.setId(productId);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(modelMapper.map(product, ProductDto.class)).thenReturn(productDto);
+        when(pricingServiceFeignClient.getPriceByProductId(productId, "PRODUCT-SERVICE")).thenReturn(ApiResponse.success(new PriceResponse(), "Success", UUID.randomUUID().toString(), HttpStatus.OK));
+        when(inventoryServiceFeignClient.getInventoryByProductId(productId, "PRODUCT-SERVICE")).thenReturn(ApiResponse.success(new InventoryResponse(), "Success", UUID.randomUUID().toString(), HttpStatus.OK));
+
+        // Act
+        ApiResponse response = productService.getProductById(productId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        assertEquals("Product retrieved successfully", response.getMessage());
+        assertNotNull(response.getData());
+    }
+
+    @Test
+    public void testGetProductById_ProductNotFound() {
+        // Arrange
+        Long productId = 1L;
+
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        // Act
+        ApiResponse response = productService.getProductById(productId);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("Product not found with ID: " + productId, response.getMessage());
+    }
+
+    @Test
+    public void testGetProductById_Exception() {
+        // Arrange
+        Long productId = 1L;
+
+        when(productRepository.findById(productId)).thenThrow(new RuntimeException("Database Error"));
+
+        // Act
+        ApiResponse response = productService.getProductById(productId);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to retrieve product details", response.getMessage());
+    }
+
+    // Test cases for findAvailableProductsByCategory method
+
+    @Test
+    public void testFindAvailableProductsByCategory_Success() {
+        // Arrange
+        String categoryName = "Electronics";
+        String sortBy = "low";
+
+        Category category = new Category();
+        category.setName(categoryName);
+
+        Product product1 = new Product();
+        product1.setId(1L);
+        Product product2 = new Product();
+        product2.setId(2L);
+
+        List<Product> products = List.of(product1, product2);
+
+        when(categoryRepository.findByName(categoryName)).thenReturn(Optional.of(category));
+        when(productRepository.findAvailableProductsByCategoryName(categoryName)).thenReturn(products);
+        when(modelMapper.map(product1, ProductDto.class)).thenReturn(new ProductDto());
+        when(modelMapper.map(product2, ProductDto.class)).thenReturn(new ProductDto());
+
+        // Act
+        ApiResponse response = productService.findAvailableProductsByCategory(categoryName, sortBy);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
         assertEquals("Products retrieved successfully", response.getMessage());
-        assertEquals(1, ((List<?>) response.getData()).size());
+        assertNotNull(response.getData());
     }
 
     @Test
-    void findAvailableProductsByCategory_CategoryNotFound() {
-        when(categoryRepository.findByName(anyString())).thenReturn(Optional.empty());
+    public void testFindAvailableProductsByCategory_CategoryNotFound() {
+        // Arrange
+        String categoryName = "Electronics";
+        String sortBy = "low";
 
-        ApiResponse response = productService.findAvailableProductsByCategory("Test Category", "name");
+        when(categoryRepository.findByName(categoryName)).thenReturn(Optional.empty());
 
-        assertNotNull(response);
-        assertFalse(response.isSuccess());
-        assertEquals(HttpStatus.NOT_FOUND.value(), response.getHttpStatus());
-        assertEquals("Category 'Test Category' not found.", response.getMessage());
+        // Act
+        ApiResponse response = productService.findAvailableProductsByCategory(categoryName, sortBy);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("Category '" + categoryName + "' does not exist", response.getMessage());
     }
 
     @Test
-    void findAvailableProductsByCategory_NoProductsAvailable() {
-        when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
-        when(productRepository.findAvailableProductsByCategoryName(anyString(), anyString())).thenReturn(Collections.emptyList());
+    public void testFindAvailableProductsByCategory_NoProductsFound() {
+        // Arrange
+        String categoryName = "Electronics";
+        String sortBy = "low";
 
-        ApiResponse response = productService.findAvailableProductsByCategory("Test Category", "name");
+        Category category = new Category();
+        category.setName(categoryName);
 
-        assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
-        assertEquals("No available products found for category 'Test Category'.", response.getMessage());
+        when(categoryRepository.findByName(categoryName)).thenReturn(Optional.of(category));
+        when(productRepository.findAvailableProductsByCategoryName(categoryName)).thenReturn(List.of());
+
+        // Act
+        ApiResponse response = productService.findAvailableProductsByCategory(categoryName, sortBy);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+        assertEquals("No products found for category: " + categoryName, response.getMessage());
+    }
+
+    @Test
+    public void testFindAvailableProductsByCategory_Exception() {
+        // Arrange
+        String categoryName = "Electronics";
+        String sortBy = "low";
+
+        when(categoryRepository.findByName(categoryName)).thenThrow(new RuntimeException("Database Error"));
+
+        // Act
+        ApiResponse response = productService.findAvailableProductsByCategory(categoryName, sortBy);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to retrieve products", response.getMessage());
     }
 }

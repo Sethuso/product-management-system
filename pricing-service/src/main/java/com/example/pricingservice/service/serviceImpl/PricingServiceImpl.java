@@ -90,13 +90,5 @@ public class PricingServiceImpl implements PriceService {
         }
     }
 
-    @Override
-    public ApiResponse getPricesByProductIds(List<Long> productIds) {
-        return null;
-    }
 
-    @Override
-    public ApiResponse deletePrice(Long id) {
-        return null;
-    }
 }

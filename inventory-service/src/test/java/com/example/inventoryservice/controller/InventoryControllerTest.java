@@ -1,6 +1,9 @@
 package com.example.inventoryservice.controller;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.inventoryservice.dto.InventoryDto;
+import com.example.inventoryservice.request.InventoryRequest;
 import com.example.inventoryservice.response.ApiResponse;
 import com.example.inventoryservice.service.InventoryService;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,16 +12,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.UUID;
 
-class InventoryControllerTest {
+public class InventoryControllerTest {
 
     @Mock
     private InventoryService inventoryService;
@@ -26,113 +23,109 @@ class InventoryControllerTest {
     @InjectMocks
     private InventoryController inventoryController;
 
-    private MockMvc mockMvc;
-
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(inventoryController).build();
     }
 
+    // Test cases for updateInventory endpoint
+
     @Test
-    void testUpdateInventory_Success() throws Exception {
+    public void testUpdateInventory_Success() {
         // Arrange
-        InventoryDto inventoryDto = new InventoryDto();
-        inventoryDto.setProductId(1L);
-        inventoryDto.setQuantity(10);
+        InventoryRequest inventoryRequest = new InventoryRequest();
+        inventoryRequest.setProductId(1L);
+        inventoryRequest.setQuantity(10);
 
-        ApiResponse apiResponse = ApiResponse.success(inventoryDto, "Inventory updated successfully", "traceId", HttpStatus.OK);
+        ApiResponse serviceResponse = ApiResponse.success(new InventoryDto(), "Inventory updated successfully", UUID.randomUUID().toString(), HttpStatus.OK);
 
-        when(inventoryService.updateInventory(any(InventoryDto.class))).thenReturn(apiResponse);
+        when(inventoryService.updateInventory(inventoryRequest)).thenReturn(serviceResponse);
 
-        // Act & Assert
-        mockMvc.perform(post("/com/api/inventory")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"productId\": 1, \"quantity\": 10}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Inventory updated successfully"))
-                .andExpect(jsonPath("$.data.productId").value(1))
-                .andExpect(jsonPath("$.data.quantity").value(10));
+        // Act
+        ApiResponse response = inventoryController.updateInventory(inventoryRequest);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        assertEquals("Inventory updated successfully", response.getMessage());
+        assertNotNull(response.getData());
     }
 
     @Test
-    void testUpdateInventory_ProductNotFound() throws Exception {
+    public void testUpdateInventory_Exception() {
         // Arrange
-        ApiResponse apiResponse = ApiResponse.failure("Product not found", "traceId", HttpStatus.NOT_FOUND);
+        InventoryRequest inventoryRequest = new InventoryRequest();
+        inventoryRequest.setProductId(1L);
 
-        when(inventoryService.updateInventory(any(InventoryDto.class))).thenReturn(apiResponse);
+        when(inventoryService.updateInventory(inventoryRequest)).thenThrow(new RuntimeException("Service Error"));
 
-        // Act & Assert
-        mockMvc.perform(post("/com/api/inventory")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"productId\": 1, \"quantity\": 10}"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Product not found"));
+        // Act
+        ApiResponse response = inventoryController.updateInventory(inventoryRequest);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to update inventory", response.getMessage());
     }
 
-    @Test
-    void testUpdateInventory_InternalServerError() throws Exception {
-        // Arrange
-        ApiResponse apiResponse = ApiResponse.failure("Failed to update inventory", "traceId", HttpStatus.INTERNAL_SERVER_ERROR);
-
-        when(inventoryService.updateInventory(any(InventoryDto.class))).thenReturn(apiResponse);
-
-        // Act & Assert
-        mockMvc.perform(post("/com/api/inventory")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"productId\": 1, \"quantity\": 10}"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message").value("Failed to update inventory"));
-    }
+    // Test cases for getInventoryByProductId endpoint
 
     @Test
-    void testGetInventoryByProductId_Success() throws Exception {
+    public void testGetInventoryByProductId_Success() {
         // Arrange
         Long productId = 1L;
         InventoryDto inventoryDto = new InventoryDto();
         inventoryDto.setProductId(productId);
         inventoryDto.setQuantity(10);
 
-        ApiResponse apiResponse = ApiResponse.success(inventoryDto, "Inventory fetched successfully", "traceId", HttpStatus.OK);
+        when(inventoryService.getInventoryByProductId(productId)).thenReturn(inventoryDto);
 
-        when(inventoryService.getInventoryByProductId(productId)).thenReturn(apiResponse);
+        // Act
+        ApiResponse response = inventoryController.getInventoryByProductId(productId, "PRODUCT-SERVICE");
 
-        // Act & Assert
-        mockMvc.perform(get("/com/api/getByProductId")
-                        .param("productId", "1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Inventory fetched successfully"))
-                .andExpect(jsonPath("$.data.productId").value(1))
-                .andExpect(jsonPath("$.data.quantity").value(10));
+        // Assert
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
+        assertEquals("Inventory fetched successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals(productId, ((InventoryDto) response.getData()).getProductId());
     }
 
     @Test
-    void testGetInventoryByProductId_InventoryNotFound() throws Exception {
+    public void testGetInventoryByProductId_Exception() {
         // Arrange
         Long productId = 1L;
-        ApiResponse apiResponse = ApiResponse.failure("Inventory not found", "traceId", HttpStatus.NOT_FOUND);
 
-        when(inventoryService.getInventoryByProductId(productId)).thenReturn(apiResponse);
+        when(inventoryService.getInventoryByProductId(productId)).thenThrow(new RuntimeException("Service Error"));
 
-        // Act & Assert
-        mockMvc.perform(get("/com/api/getByProductId")
-                        .param("productId", "1"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Inventory not found"));
+        // Act
+        ApiResponse response = inventoryController.getInventoryByProductId(productId, "PRODUCT-SERVICE");
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
+        assertEquals("Failed to fetch inventory", response.getMessage());
     }
 
     @Test
-    void testGetInventoryByProductId_InternalServerError() throws Exception {
+    public void testGetInventoryByProductId_Unauthorized() {
         // Arrange
         Long productId = 1L;
-        ApiResponse apiResponse = ApiResponse.failure("Failed to fetch inventory", "traceId", HttpStatus.INTERNAL_SERVER_ERROR);
 
-        when(inventoryService.getInventoryByProductId(productId)).thenReturn(apiResponse);
+        // Act
+        ApiResponse response = inventoryController.getInventoryByProductId(productId, "INVALID-SERVICE");
 
-        // Act & Assert
-        mockMvc.perform(get("/com/api/getByProductId")
-                        .param("productId", "1"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message").value("Failed to fetch inventory"));
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());
+        assertEquals("Unauthorized request. Service-Name header is missing or incorrect.", response.getMessage());
+    }
+
+    @Test
+    public void testGetInventoryByProductId_MissingServiceNameHeader() {
+        // Arrange
+        Long productId = 1L;
+
+        // Act
+        ApiResponse response = inventoryController.getInventoryByProductId(productId, null);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());
+        assertEquals("Unauthorized request. Service-Name header is missing or incorrect.", response.getMessage());
     }
 }

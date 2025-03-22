@@ -37,7 +37,7 @@ public class CategoryControllerTest {
         apiResponse = ApiResponse.builder()
                 .success(true)
                 .message("Success")
-                .httpStatus(HttpStatus.OK.value())
+                .httpStatus(HttpStatus.OK)
                 .build();
     }
 
@@ -49,7 +49,7 @@ public class CategoryControllerTest {
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
         assertEquals("Success", response.getMessage());
         verify(categoryService, times(1)).createCategory(any(CategoryRequest.class));
     }
@@ -62,7 +62,7 @@ public class CategoryControllerTest {
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
         assertEquals("Success", response.getMessage());
         verify(categoryService, times(1)).getCategoryById(anyLong());
     }
@@ -75,7 +75,7 @@ public class CategoryControllerTest {
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals(HttpStatus.OK.value(), response.getHttpStatus());
+        assertEquals(HttpStatus.OK, response.getHttpStatus());
         assertEquals("Success", response.getMessage());
         verify(categoryService, times(1)).getAllCategories();
     }
